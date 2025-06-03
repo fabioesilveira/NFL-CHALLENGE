@@ -1,55 +1,57 @@
 "use client"
 
-import axios from "axios";
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from 'react';
+import { Player } from './types/types'
 
-type Player = {
-  position: string,
-  full_name: string,
-  player_id: string,
-  team: string
-}
 
-export default function Home() {
-  
-  const[player, setPlayer] = useState<Player[] | null>(null);
+const PlayersTable: React.FC = () => {
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchApi() {
+    const fetchData = async () => {
       try {
-        const req = await axios.get("https://api.sleeper.app/v1/players/nfl")
-        const allPlayers = Object.values(req.data) as Player [];
-        const fifteenPlayers = allPlayers.slice(0, 10);
-        setPlayer(fifteenPlayers);
-      } catch (error) {
-        console.error("Error to load", error)
+        const response = await fetch('https://api.sleeper.app/v1/players/nfl');
+        const data = await response.json()
+        const getPlayers = Object.values(data) as Player[]
+        const fifteenPlayers = getPlayers.slice(0, 14)
+        setPlayers(fifteenPlayers)
+      
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-    }
-    fetchApi();
-  }, [])
-  
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
   return (
-    <>
-    <table>
-      <thead>
-        <tr>
-          <th>Player</th>
-          <th>Position</th>
-          <th>Team</th>
-        </tr>
-      </thead>
-      <tbody>
-        {!player ? 
-        <tr>
-          <td colSpan={3}>Loading..</td>
-        </tr> : 
-        player.map((e) => (
-          <tr key={e.player_id}>
-            <td>{e.full_name}</td>
+    <div>
+      <table>
+        <thead>
+          <tr>
+            <th>Full Name</th>
+            <th>Position</th>
+            <th>Team</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
-    </>
-  )
-}
+        </thead>
+        <tbody>
+          {players.map((e) => (
+            <tr key={e.player_id}>
+              <td>{e.position}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default PlayersTable;
+
